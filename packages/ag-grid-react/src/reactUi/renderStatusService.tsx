@@ -2,6 +2,8 @@ import type { IRenderStatusService } from 'ag-grid-community';
 import { BeanStub } from 'ag-grid-community';
 
 export class RenderStatusService extends BeanStub implements IRenderStatusService {
+    private processResizeScheduled = false;
+
     public postConstruct(): void {
         // In React we know that headers and cells can be rendered asynchronously, so to help improve DX we automatically queue resize operations
         // after grouping operations so react devs can write code like this and have it work without the need for a setTimeout.
@@ -24,7 +26,12 @@ export class RenderStatusService extends BeanStub implements IRenderStatusServic
     private queueResizeOperationsForTick() {
         const colAutosize = this.beans.colAutosize!;
         colAutosize.shouldQueueResizeOperations = true;
+        if (this.processResizeScheduled) {
+            return;
+        }
+        this.processResizeScheduled = true;
         setTimeout(() => {
+            this.processResizeScheduled = false;
             colAutosize.processResizeOperations();
         }, 0);
     }
